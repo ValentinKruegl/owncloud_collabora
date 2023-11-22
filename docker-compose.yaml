@@ -144,7 +144,7 @@ services:
     expose:
       - "9980" 
     environment:
-            # - domain=${OWNCLOUD_URL}
+      - domain=${OWNCLOUD_URL}
       - 'dictionaries=en_US,de_DE'
       - VIRTUAL_PROTO=http
       - VIRTUAL_PORT=9980
