@@ -3,7 +3,7 @@ The image sets up 3 websites:
    - a owncloud
    - a collabora server
 
-If wanted, the traefik dashboard can be disabled by commenting out most of the labels. The compose works with a .env file, below is a example version
+If wanted, the traefik dashboard can be disabled by commenting out most of the labels. 
 
 To start the server:
 clone this repository locally and cd into the toplevel directory
