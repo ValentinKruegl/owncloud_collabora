@@ -152,8 +152,9 @@ services:
       - username=admin
       - password=admin
       - "extra_params=--o:ssl.enable=false  --o:ssl.termination=true"
-    cap_add:
-      - MKNOD
+    #might be necessary  
+    #cap_add:
+    #  - MKNOD
     tty: true
     labels:
       - "traefik.enable=true"
