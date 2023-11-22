@@ -139,22 +139,13 @@ services:
     image: collabora/code
     container_name: collabora
     restart: unless-stopped
-    ports:
-      - "9980:9980"
-    expose:
-      - "9980" 
     environment:
       - domain=${OWNCLOUD_URL}
       - 'dictionaries=en_US,de_DE'
-      - VIRTUAL_PROTO=http
-      - VIRTUAL_PORT=9980
-      - VIRTUAL_HOST=${COLLABORA_DOMAIN}
+      #credentials for admin overlay at collabora.url/browser/dist/admin/admin.html
       - username=admin
       - password=admin
       - "extra_params=--o:ssl.enable=false  --o:ssl.termination=true"
-    #might be necessary  
-    #cap_add:
-    #  - MKNOD
     tty: true
     labels:
       - "traefik.enable=true"
