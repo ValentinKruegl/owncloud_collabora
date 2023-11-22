@@ -1,0 +1,173 @@
+version: "3"
+volumes:
+  files:
+    driver: local
+  mysql:
+    driver: local
+  redis:
+    driver: local
+ 
+networks:
+  external-network:
+  owncloud-network:
+   
+services:
+  traefik:
+    image: "traefik:${TRAEFIK_VERSION}"
+    container_name: "traefik"
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.email=${ACME_MAIL}"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      #  test certificate for staging, for production comment out
+#      - "--certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"      
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "./letsencrypt:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    labels:
+      - "traefik.enable=true"
+      #http entry
+      - "traefik.http.routers.traefik-http.entrypoints=web"
+      - "traefik.http.routers.traefik-http.rule=Host(`${TRAEFIK_URL}`)"
+      - "traefik.http.routers.traefik-http.middlewares=traefik-https-redirect"
+      - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
+      #https entry
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.rule=Host(`${TRAEFIK_URL}`)"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.tls.certresolver=myresolver"
+      #service setup
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.middlewares=traefik-auth"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_ACCOUNT}"
+    networks:
+      - external-network
+ 
+  owncloud:
+    image: owncloud/server:latest
+    container_name: owncloud_server
+    restart: always
+    depends_on:
+      - mariadb
+      - redis
+    environment:
+      - OWNCLOUD_DOMAIN=https://${OWNCLOUD_URL}
+      - OWNCLOUD_TRUSTED_DOMAINS=${OWNCLOUD_URL}
+      - OWNCLOUD_DB_TYPE=mysql
+      - OWNCLOUD_DB_NAME=owncloud
+      - OWNCLOUD_DB_USERNAME=owncloud
+      - OWNCLOUD_DB_PASSWORD=owncloud
+      - OWNCLOUD_DB_HOST=mariadb
+      - OWNCLOUD_ADMIN_USERNAME=${OWNCLOUD_ADMIN_USERNAME}
+      - OWNCLOUD_ADMIN_PASSWORD=${OWNCLOUD_ADMIN_PASSWORD}
+      - OWNCLOUD_MYSQL_UTF8MB4=true
+      - OWNCLOUD_REDIS_ENABLED=true
+      - OWNCLOUD_REDIS_HOST=redis
+      - OWNCLOUD_LICENSE_KEY=${OWNCLOUD_LICENSE_KEY}
+      - OWNCLOUD_APPS_INSTALL=richdocuments
+      - OWNCLOUD_POST_INSTALL_PATH=/etc/post_install.d  
+      - COLLABORA_DOMAIN=${COLLABORA_DOMAIN}  
+    healthcheck:
+      test: ["CMD", "/usr/bin/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 5  
+    labels:
+      - "traefik.enable=true"
+    #http entry
+      - "traefik.http.routers.cloud-http.entrypoints=web"
+      - "traefik.http.routers.cloud-http.rule=Host(`${OWNCLOUD_URL}`)" 
+      - "traefik.http.routers.cloud-http.middlewares=cloud-https-redirect"
+      - "traefik.http.middlewares.cloud-https-redirect.redirectscheme.scheme=https"
+     #https entry
+      - "traefik.http.routers.cloud.entrypoints=websecure"
+      - "traefik.http.routers.cloud.rule=Host(`${OWNCLOUD_URL}`)"
+      - "traefik.http.routers.cloud.tls=true"
+      - "traefik.http.routers.cloud.tls.certresolver=myresolver"
+    volumes:
+      - files:/mnt/data
+      - "./post_install.d:/etc/post_install.d"  
+    networks:
+      - external-network
+      - owncloud-network
+ 
+  mariadb:
+    image: mariadb:10.11 # minimum required ownCloud version is 10.9
+    container_name: owncloud_mariadb
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=owncloud
+      - MYSQL_USER=owncloud
+      - MYSQL_PASSWORD=owncloud
+      - MYSQL_DATABASE=owncloud
+      - MARIADB_AUTO_UPGRADE=1
+    command: ["--max-allowed-packet=128M", "--innodb-log-file-size=64M"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-u", "root", "--password=owncloud"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - mysql:/var/lib/mysql
+    networks:
+         - owncloud-network
+ 
+  redis:
+    image: redis:6
+    container_name: owncloud_redis
+    restart: always
+    command: ["--databases", "1"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis:/data
+    networks:
+         - owncloud-network
+ 
+  collabora:
+    image: collabora/code
+    container_name: collabora
+    restart: unless-stopped
+    ports:
+      - "9980:9980"
+    expose:
+      - "9980" 
+    environment:
+            # - domain=${OWNCLOUD_URL}
+      - 'dictionaries=en_US,de_DE'
+      - VIRTUAL_PROTO=http
+      - VIRTUAL_PORT=9980
+      - VIRTUAL_HOST=${COLLABORA_DOMAIN}
+      - username=admin
+      - password=admin
+      - "extra_params=--o:ssl.enable=false  --o:ssl.termination=true"
+    cap_add:
+      - MKNOD
+    tty: true
+    labels:
+      - "traefik.enable=true"
+      #http entry
+      - "traefik.http.routers.collabora-http.entrypoints=web"
+      - "traefik.http.routers.collabora-http.rule=Host(`${COLLABORA_DOMAIN}`)"
+      - "traefik.http.routers.collabora-http.middlewares=collabora-https-redirect"
+      - "traefik.http.middlewares.collabora-https-redirect.redirectscheme.scheme=https"
+      #https entry
+      - "traefik.http.routers.collabora.entrypoints=websecure"
+      - "traefik.http.routers.collabora.rule=Host(`${COLLABORA_DOMAIN}`)"
+      - "traefik.http.routers.collabora.tls=true"
+      - "traefik.http.routers.collabora.tls.certresolver=myresolver"
+    volumes:
+      - "./coolwsd.xml:/etc/coolwsd/coolwsd.xml"
+    networks:
+      - external-network
