@@ -167,7 +167,8 @@ services:
       - "traefik.http.routers.collabora.rule=Host(`${COLLABORA_DOMAIN}`)"
       - "traefik.http.routers.collabora.tls=true"
       - "traefik.http.routers.collabora.tls.certresolver=myresolver"
-    volumes:
-      - "./coolwsd.xml:/etc/coolwsd/coolwsd.xml"
+    #can mount a collabora config
+    #volumes:
+    #  - "./coolwsd.xml:/etc/coolwsd/coolwsd.xml"
     networks:
       - external-network
