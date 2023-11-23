@@ -16,6 +16,7 @@ services:
     image: "traefik:${TRAEFIK_VERSION}"
     container_name: "traefik"
     command:
+      #to disable dashboard comment out next line
       - "--api.dashboard=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
@@ -34,6 +35,7 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     labels:
       - "traefik.enable=true"
+      #to disable dasboard all below labels can be commented out
       #http entry
       - "traefik.http.routers.traefik-http.entrypoints=web"
       - "traefik.http.routers.traefik-http.rule=Host(`${TRAEFIK_URL}`)"
