@@ -1,4 +1,4 @@
-The image sets up 3 websites:
+This repository sets up 3 websites:
    - a traefik dashboard (can be disabled)
    - a owncloud
    - a collabora server
