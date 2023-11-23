@@ -1,14 +1,15 @@
 The image sets up 3 websites:
-   - a traefik dashboard
+   - a traefik dashboard (can be disabled)
    - a owncloud
    - a collabora server
 
 If wanted, the traefik dashboard can be disabled by commenting out most of the labels. 
 
 To start the server:
-clone this repository locally and cd into the toplevel directory
-run `docker compose up -d` (or `docker-compose up -d` depending on docker version)
+ 1. clone this repository locally 
+ 2. cd into the toplevel directory
+ 3. run `docker compose up -d` (or `docker-compose up -d` depending on docker version)
 
 
-If you want to change collabora app config, edit the 01-collabora.sh script and add commands according to the documentation:
+If you want to configure the owncloud collabora app on startup, edit the 01-collabora.sh script and add commands according to the documentation:
 https://doc.owncloud.com/server/next/admin_manual/configuration/server/occ_command.html#collabora-online-secure-view
