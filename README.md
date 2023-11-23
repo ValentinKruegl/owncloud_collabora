@@ -3,8 +3,6 @@ The image sets up 3 websites:
    - a owncloud
    - a collabora server
 
-If wanted, the traefik dashboard can be disabled by commenting out most of the labels. 
-
 To start the server:
  1. clone this repository locally 
  2. cd into the toplevel directory
