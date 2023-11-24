@@ -62,8 +62,9 @@ services:
       - mariadb
       - redis
     environment:
-      - OWNCLOUD_DOMAIN=https://${OWNCLOUD_URL}
+      - OWNCLOUD_DOMAIN=${OWNCLOUD_URL}
       - OWNCLOUD_TRUSTED_DOMAINS=${OWNCLOUD_URL}
+      - OWNCLOUD_PROTOCOL=https
       - OWNCLOUD_DB_TYPE=mysql
       - OWNCLOUD_DB_NAME=owncloud
       - OWNCLOUD_DB_USERNAME=owncloud
